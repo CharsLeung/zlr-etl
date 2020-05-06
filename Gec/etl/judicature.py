@@ -9,7 +9,6 @@ from = office desktop
 """
 import time
 
-from Calf.data import BaseModel
 from Gec import workspace
 from Gec.etl.core import Qcc
 from Gec.etl.utils import progress_bar
@@ -26,18 +25,8 @@ class Judicature(Qcc):
         pass
 
     @staticmethod
-    def run():
-        bm = BaseModel(tn='qcc_original')
-        bm2 = BaseModel(tn='qcc_format_flss')
-
-        metaModel = '法律诉讼'
-
-        enterprises = bm.query(
-            sql={'metaModel': metaModel,
-                 # 'name': '重庆市江北区烽雨五金建材经营部'
-                 },
-            # field={'content': 1, '_id': 0},
-            no_cursor_timeout=True)
+    def run(enterprises, driver):
+        # bm2 = BaseModel(tn='qcc_format_jbxx')
         i = 0
         etp = Judicature()
         new = []
@@ -50,7 +39,7 @@ class Judicature(Qcc):
             if e is not None:
                 new.append(e)
             if len(new) > 100:
-                # bm2.insert_batch(new)
+                driver.insert_batch(new)
                 new.clear()
                 progress_bar(
                     count, i, 'transfer qcc data and spend {} '
@@ -58,14 +47,14 @@ class Judicature(Qcc):
             i += 1
             pass
         if len(new):
-            # bm2.insert_batch(new)
+            driver.insert_batch(new)
             new.clear()
             progress_bar(
                 count, i, 'transfer qcc data and spend {} '
                           'seconds'.format(int(time.time() - start)))
         if len(etp.logs):
-            etp.save_logs('{}.csv'.format(metaModel))
+            etp.save_logs('{}.csv'.format('法律诉讼'))
         pass
 
 
-Judicature.run()
+# Judicature.run()

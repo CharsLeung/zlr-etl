@@ -32,4 +32,4 @@ class FtpReader:
 
 
 if __name__ == "__main__":
-    FtpReader('127.0.0.1', 21, 'user', '12345').files()
+    FtpReader('125.83.85.173', 21, 'Chubby', 'j3PxqH2tvK0J-ftp').files()
