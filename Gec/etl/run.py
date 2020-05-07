@@ -21,19 +21,28 @@ def run():
     bm = BaseModel(tn='qcc_original')
     bm2 = BaseModel(tn='qcc_format')
 
-    metaModels = ['基本信息', '企业发展', '法律诉讼', '经营风险',
-                  '经营状况', '公司新闻', '知识产权']
+    metaModels = [
+        # '基本信息',
+        # '企业发展',
+        '法律诉讼',
+        # '经营风险',
+        # '经营状况',
+        # '公司新闻',
+        # '知识产权'
+    ]
     models = {
-        '基本信息': Enterprise, '企业发展': Develop,
-        '法律诉讼': Judicature, '经营风险': Risk,
-        '经营状况': Operating, '公司新闻': News,
-        '知识产权': Right
+        '基本信息': Enterprise(), '企业发展': Develop(),
+        '法律诉讼': Judicature(), '经营风险': Risk(),
+        '经营状况': Operating(), '公司新闻': News(),
+        '知识产权': Right()
     }
     for m in metaModels:
         enterprises = bm.query(
             sql={'metaModel': m},
             # field={'content': 1, '_id': 0},
-            no_cursor_timeout=True)
+            # no_cursor_timeout=True
+            skip=0
+        )
         print('deal metaModel({})...'.format(m))
         mdl = models[m]
         mdl.run(enterprises, bm2)

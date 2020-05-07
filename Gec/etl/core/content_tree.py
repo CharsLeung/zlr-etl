@@ -32,11 +32,7 @@ class ContentTree(object):
     source_patterns = {}
 
     def __init__(self, content=None):
-        self.source_dim_2_content = []
-        self.format_dim_2_content = []
-        self.format_content = {}
-        self.content = content
-        self.patterns = self.source_patterns
+        self.__load_content__(content)
         pass
 
     def __load_content__(self, content):

@@ -24,37 +24,5 @@ class Judicature(Qcc):
                 '{}（标准结构）'.format('法律诉讼'))
         pass
 
-    @staticmethod
-    def run(enterprises, driver):
-        # bm2 = BaseModel(tn='qcc_format_jbxx')
-        i = 0
-        etp = Judicature()
-        new = []
-        start = time.time()
-        count = enterprises.count()
-        enterprises = etp.transfer_from_cursor(enterprises, False)
-        for e in enterprises:
-            # if i > 1001:
-            #     break
-            if e is not None:
-                new.append(e)
-            if len(new) > 100:
-                driver.insert_batch(new)
-                new.clear()
-                progress_bar(
-                    count, i, 'transfer qcc data and spend {} '
-                              'seconds'.format(int(time.time() - start)))
-            i += 1
-            pass
-        if len(new):
-            driver.insert_batch(new)
-            new.clear()
-            progress_bar(
-                count, i, 'transfer qcc data and spend {} '
-                          'seconds'.format(int(time.time() - start)))
-        if len(etp.logs):
-            etp.save_logs('{}.csv'.format('法律诉讼'))
-        pass
-
 
 # Judicature.run()

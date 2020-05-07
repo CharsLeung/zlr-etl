@@ -8,13 +8,16 @@ datetime = 2020/4/26 0026 上午 11:23
 from = office desktop
 """
 import re
+import time
 import pandas as pd
 import datetime as dt
 
 from Gec.exception import SuccessMessage, \
     WarningMessage, ErrorMessage, ExceptionInfo
 # from Gec.etl.core import Content
+from Gec import project_dir
 from Gec.etl.core import ContentTree
+from Gec.etl.utils import progress_bar
 
 
 class Qcc(ContentTree):
@@ -75,7 +78,7 @@ class Qcc(ContentTree):
         """
         # TODO(leung): 保持标准化模板的及时性
         regs = pd.read_excel(
-            path,
+            project_dir + '\【数宜信】企业信息数据-属性字段一览表2.0.xlsx',
             sheet_name=sheet,
             header=[1])
         regs['匹配模式'] = regs['匹配模式'].map(
@@ -107,7 +110,8 @@ class Qcc(ContentTree):
             else:
                 b = r['值匹配模式']
             rs[r['完整目录']] = [a, b, r['值类型'], r['缺省填充']]
-        print(SuccessMessage('success load standardization data doc.'))
+        print(SuccessMessage('success load standardization data '
+                             'doc({}).'.format(sheet)))
         return rs
 
     def transfer(self, print_process=False):
@@ -141,6 +145,35 @@ class Qcc(ContentTree):
                 self.to_logs(str(e), 'EXCEPTION', _['name'])
                 d = None
             yield d
+        pass
+
+    def run(self, cursor, driver, insert_batch_size=10):
+        i = 0
+        new = []
+        count = cursor.count()
+        start = time.time()
+        enterprises = self.transfer_from_cursor(cursor, False)
+        for e in enterprises:
+            # if i > 1001:
+            #     break
+            if e is not None:
+                new.append(e)
+            if len(new) > insert_batch_size:
+                # driver.insert_batch(new)
+                new.clear()
+                progress_bar(
+                    count, i, 'transfer qcc data and spend {} '
+                              'seconds'.format(int(time.time() - start)))
+            i += 1
+            pass
+        if len(new):
+            # driver.insert_batch(new)
+            new.clear()
+            progress_bar(
+                count, i, 'transfer qcc data and spend {} '
+                          'seconds'.format(int(time.time() - start)))
+        if len(self.logs):
+            self.save_logs('{}.csv'.format(self.__class__))
         pass
 
     @staticmethod
@@ -261,10 +294,19 @@ class Qcc(ContentTree):
         :return:
         """
         _ = Qcc.textPhrase(value)
-        _ = re.search('^\d{4}(-|/|.|年)\d{1,2}(-|/|.|月)\d{1,2}', _)
-        if _ is not None:
-            for d in _.group():
-                pass
+        # _ = re.findall('\d{4}(-|/|.|年)\d{1,2}(-|/|.|月)\d{1,2}', _)
+        # if _ is not None:
+        #     dr = []
+        #     for d in _.group():
+        #         d = d.replace('/', '-').replace('.', '-'). \
+        #             replace('年', '-').replace('月', '-'). \
+        #             replace('日', '')
+        #         dr.append(d)
+        #         pass
+        #     return '至'.join(dr)
+        # else:
+        #     return None
+        return _
 
     @staticmethod
     def getPercent(value, pattern=None, **kwargs):
