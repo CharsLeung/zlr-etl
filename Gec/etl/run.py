@@ -19,17 +19,19 @@ from Gec.etl.utils import progress_bar
 
 
 def run():
-    bm = BaseModel(tn='qcc_original')
+    bm = BaseModel(
+        tn='qcc_original'
+    )
     bm2 = BaseModel(tn='qcc_format')
 
     metaModels = [
-        # '基本信息',
-        # '企业发展',
-        # '法律诉讼',
+        '基本信息',
+        '企业发展',
+        '法律诉讼',
         '经营风险',
-        # '经营状况',
-        # '公司新闻',
-        # '知识产权'
+        '经营状况',
+        '公司新闻',
+        '知识产权'
     ]
     models = {
         '基本信息': Enterprise(), '企业发展': Develop(),
