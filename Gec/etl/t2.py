@@ -46,8 +46,52 @@ def pathTree(data):
 
 pass
 
-d1 = {'n1': {'n3': 1}}
-d2 = {'n3': 1}
+# from Calf.data import BaseModel
+#
+#
+# bm = BaseModel(tn='qcc', location='gcxy', dbname='data')
+# name = '重庆市应用技术有限公司'
+# d = bm.query_one(sql={'name': name, 'metaModel': '基本信息'})
+n1 = 'content-企业年报-投资'
+n2 = 'content-企业年报-#1-对外投资'
+
+
+def replace_standard_key(s, f, p=None):
+    if '#' in s:
+        ss = s.split('-')
+        idx = []
+        for i in range(len(ss)):
+            if '#' in ss[i]:
+                idx.append([i, ss[i]])
+        ff = f.split('-')
+        if p is not None:
+            p = p.split(',')
+            p = p[0:len(idx)]
+            p = list(reversed(p))
+
+        idx = list(reversed(idx))
+        for i in range(len(idx)):
+            # if len(ff) != len(ss)-len(idx):
+            if p is None:
+                ff.insert(idx[i][0], idx[i][1])
+            else:
+                ff.insert(
+                    int(p[i]) if i < len(p) else idx[i][0],
+                    idx[i][1]
+                )
+        return '-'.join(ff)
+    else:
+        return f
+
+
+print(replace_standard_key(n2, n1, '2,3'))
+
+def func(*arg):
+    print(arg)
+    pass
+
+
+# func(*['a']+['b', 'c'])
 pass
 
 

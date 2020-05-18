@@ -176,7 +176,6 @@ class ContentTree(object):
             if '序号' in d[0]:
                 continue
             data.append(d)
-
         self.source_dim_2_content = data
         # return dim_2_data
         pass
@@ -208,21 +207,37 @@ class ContentTree(object):
                     f_k = None
             return f_k
 
-        def replace_standard_key(s, f):
+        def replace_standard_key(s, f, p=None):
             if '#' in s:
                 ss = s.split('-')
                 idx = []
                 for i in range(len(ss)):
                     if '#' in ss[i]:
                         idx.append([i, ss[i]])
+
+                if p is not None:
+                    if p == '0':
+                        return f
+                    p = p.split(',')
+                    p = p[0:len(idx)]
+                    p = list(reversed(p))
                 ff = f.split('-')
-                for i in idx:
-                    ff.insert(i[0], i[1])
+                idx = list(reversed(idx))
+                for i in range(len(idx)):
+                    # if len(ff) != len(ss)-len(idx):
+                    if p is None:
+                        ff.insert(idx[i][0], idx[i][1])
+                    else:
+                        ff.insert(
+                            int(p[i]) if i < len(p) else idx[i][0],
+                            idx[i][1]
+                        )
                 return '-'.join(ff)
             else:
                 return f
 
         match_type = None
+        __ = re.compile(r'#\d+')
         for d in self.source_dim_2_content:
             ms = []
             if d[0] in self.match.keys():
@@ -236,12 +251,13 @@ class ContentTree(object):
             else:
                 for pk, pv in zip(self.source_patterns.keys(),
                                   self.source_patterns.values()):
-                    # TODO:根据原始字段链的序号索引来创建带有索引的标准链
-                    # 序号索引存在于两个字段名之间的，那么标准化后的序号索
-                    # 引就依赖原始结构，这点可能需要改进
-                    sk = replace_standard_key(d[0], pk)
-                    fk = trans_key(d[0], pv[0], standard_key=sk)
+
+                    fk = trans_key(re.sub(__, '', d[0]), pv[0], standard_key=pk)
                     if fk is not None:
+                        # TODO:根据原始字段链的序号索引来创建带有索引的标准链
+                        # 序号索引存在于两个字段名之间的，那么标准化后的序号索
+                        # 引就依赖原始结构，这点可能需要改进
+                        fk = replace_standard_key(d[0], fk, pv[4])
                         dim_2_data.append([fk, d[1]])
                         new_pattern[fk] = pv
                         ms.append(fk)

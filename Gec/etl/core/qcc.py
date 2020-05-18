@@ -50,8 +50,19 @@ class Qcc(ContentTree):
             self.update_date = ReturnString['date'] if 'date' in ks else None
             cnt = ReturnString['content'] if 'content' in ks else None
             self.doc_from = ReturnString['_id'] if '_id' in ks else None
+            self.recall = self.data_recall(
+                ReturnString['statistics']) if 'statistics' in ks else None
             super().__load_content__(cnt)
         pass
+
+    @staticmethod
+    def data_recall(stat):
+        d1 = stat['应有数量']
+        d2 = stat['实际数量']
+        n1 = sum([n if isinstance(n, (int, float)) else 0 for n in d1.values()])
+        n2 = sum([n if isinstance(n, (int, float)) else 0 for n in d2.values()])
+        recall = round(n2 / float(n1), 2) if n1 else 1
+        return recall
 
     def reload_content(self, ReturnString):
         self.__load_content__(ReturnString)
@@ -59,7 +70,7 @@ class Qcc(ContentTree):
 
     def to_dict(self):
         return dict(
-            name=self.name,
+            name=self.textPhrase(self.name),
             metaModel=self.metaModel,
             url=self.url,
             headers=self.headers,
@@ -67,6 +78,7 @@ class Qcc(ContentTree):
             date=self.update_date,
             hash=hash(str(self.format_content)),
             doc_from=self.doc_from,
+            recall=self.recall,
             **self.format_content
         )
 
@@ -80,13 +92,15 @@ class Qcc(ContentTree):
         regs = pd.read_excel(
             project_dir + '\【数宜信】企业信息数据-属性字段一览表2.0.xlsx',
             sheet_name=sheet,
-            header=[1])
+            header=[1],
+            dtype={'组位置': 'str'}
+        )
         regs['匹配模式'] = regs['匹配模式'].map(
             lambda x: re.sub('\d+', lambda _: '\d+', x)
         )
         regs['匹配模式-修正'].fillna(regs['匹配模式'], inplace=True)
         regs = regs.loc[:, ['完整目录', '匹配模式-修正', '值匹配模式',
-                            '值类型', '缺省填充']]
+                            '值类型', '缺省填充', '组位置']]
         # regs.sort_values(['完整目录'], ascending=False, inplace=True)
         regs['匹配模式-修正'] = regs['匹配模式-修正'].map(
             lambda x: None if pd.isnull(x) else x
@@ -97,6 +111,9 @@ class Qcc(ContentTree):
         regs['值类型'].fillna('str', inplace=True)
         regs['缺省填充'] = regs['缺省填充'].map(
             lambda x: None if pd.isnull(x) else x
+        )
+        regs['组位置'] = regs['组位置'].map(
+            lambda x: None if pd.isnull(x) or x == 'nan' else x
         )
         rs = {}
         for i, r in regs.iterrows():
@@ -109,7 +126,7 @@ class Qcc(ContentTree):
                 b = r['值匹配模式']
             else:
                 b = r['值匹配模式']
-            rs[r['完整目录']] = [a, b, r['值类型'], r['缺省填充']]
+            rs[r['完整目录']] = [a, b, r['值类型'], r['缺省填充'], r['组位置']]
         print(SuccessMessage('success load standardization data '
                              'doc({}).'.format(sheet)))
         return rs
@@ -142,6 +159,7 @@ class Qcc(ContentTree):
                 d = self.to_dict()
                 # d = self.to_tree()
             except Exception as e:
+                ExceptionInfo(e)
                 self.to_logs(str(e), 'EXCEPTION', _['name'])
                 d = None
             yield d
@@ -151,6 +169,7 @@ class Qcc(ContentTree):
         i = 0
         new = []
         count = cursor.count()
+        print('total: {}'.format(count))
         start = time.time()
         enterprises = self.transfer_from_cursor(cursor, False)
         for e in enterprises:
@@ -159,7 +178,7 @@ class Qcc(ContentTree):
             if e is not None:
                 new.append(e)
             if len(new) > insert_batch_size:
-                # driver.insert_batch(new)
+                driver.insert_batch(new)
                 new.clear()
                 progress_bar(
                     count, i, 'transfer qcc data and spend {} '
@@ -167,13 +186,13 @@ class Qcc(ContentTree):
             i += 1
             pass
         if len(new):
-            # driver.insert_batch(new)
+            driver.insert_batch(new)
             new.clear()
             progress_bar(
                 count, i, 'transfer qcc data and spend {} '
                           'seconds'.format(int(time.time() - start)))
         if len(self.logs):
-            self.save_logs('{}.csv'.format(self.__class__))
+            self.save_logs('{}.csv'.format(self.__class__.__name__))
         pass
 
     @staticmethod
@@ -208,6 +227,8 @@ class Qcc(ContentTree):
         # (\d*(,|，)*\d*)*(\.){0,1}\d*
         _ = re.search('(\d*(,|，)*\d*)*(\.){0,1}\d*', _)
         dw = _.group(0) if _ is not None else None
+        if dw is not None:
+            dw = dw.replace(',', '').replace('，', '')
         return dw
 
     @staticmethod
@@ -350,7 +371,8 @@ class Qcc(ContentTree):
                       "[\w!#$%&'*+/=?^_`{|}~-]+)*@"
                       "(?:[\w](?:[\w-]*[\w])?\.)+"
                       "[\w](?:[\w-]*[\w])?", _)
-        dw = _.group(0) if _ is not None else None
+        dw = _.group(0).lower() if _ is not None else None
+
         return dw
 
     @staticmethod
