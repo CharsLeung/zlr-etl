@@ -92,6 +92,10 @@ def func(*arg):
 
 
 # func(*['a']+['b', 'c'])
+
+a = '1+2'
+b = f(a)
+print(a)
 pass
 
 

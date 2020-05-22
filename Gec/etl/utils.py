@@ -202,7 +202,7 @@ def dictMerge(dic1, *args, append=True):
 
 # d1 = {'A':{'A1':{'B1': 1}, 'A2':2}}
 # d2 = {'A1':{'B2':3}}
-# dictMerge(d1, d2)
+# # dictMerge(d1, d2)
 # print(dictMerge(d1, d2))
 
 
